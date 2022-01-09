@@ -1,9 +1,36 @@
-import React, {useState} from 'react';
-import {View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView} from 'react-native';
+import React, {useState, useRef} from 'react';
+import {View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Keyboard} from 'react-native';
 import api from './src/services/api';
 
 export default function App(){
   const [cep, setCep] = useState('');
+  const inputRef = useRef(null);
+  const [cepUser, setCepUser] = useState(null);
+
+  function limpar() {
+    setCep('');
+    inputRef.current.focus();
+    setCepUser(null);
+  }
+  async function buscar() {
+    if(cep == ''){
+      alert('Digite um cep válido.');
+      setCep('');
+      return;
+    }
+
+    try{
+      const response = await api.get(`/${cep}/json`);
+      console.log(response.data);
+      setCepUser(response.data);
+      Keyboard.dismiss();
+    }catch(error){
+      console.log('ERROR: ' + error);
+    }
+
+  }
+
+  // Na view onde temos CEP, logradouro, bairro, ciade e estado pegamos a const cepUser com o valor que vem da api exemplo cepUser.valorapi
 
   return(
     <SafeAreaView style={styles.container}>
@@ -15,39 +42,51 @@ export default function App(){
           value={cep}
           onChangeText={(texto) => setCep(texto) }
           keyboardType='numeric'
+          ref={inputRef}
         />
       </View>
 
       <View style={styles.areaBtn}>
-        <TouchableOpacity style={[styles.botao, {backgroundColor: '#1d75cd' }]}>
+        <TouchableOpacity 
+        style={[styles.botao, {backgroundColor: '#1d75cd' }]}
+        onPress={ buscar }
+        >
           <Text style={styles.botaoText}>
             Buscar
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.botao, {backgroundColor: '#cd3e1d'}]}>
+
+        <TouchableOpacity 
+        style={[styles.botao, {backgroundColor: '#cd3e1d'}]}
+        onPress={ limpar }
+        >
           <Text style={styles.botaoText}>
             Limpar
           </Text>
         </TouchableOpacity>
       </View>
 
+
+      { cepUser && 
       <View style={styles.resultado}>
         <Text style={styles.itemText}>
-          CEP: 7900000
+          CEP: {cepUser.cep} 
         </Text>
         <Text style={styles.itemText}>
-          Logradouro: Rua 123
+          Logradouro: {cepUser.logradouro}
         </Text>
         <Text style={styles.itemText}>
-          Bairro: Centro
+          Bairro: {cepUser.bairro}
         </Text>
         <Text style={styles.itemText}>
-          Cidade: Rio de Janeiro
+          Cidade: {cepUser.localidade}
         </Text>
         <Text style={styles.itemText}>
-          Estado: RJ
+          Estado: {cepUser.uf}
         </Text>
       </View>
+      }
+
     </SafeAreaView>
   );
 }
